@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pipeline-config
+  namespace: outsight-edge
+data:
+  RABBITMQ_HOST: "rabbitmq.lidar-lab.svc.cluster.local"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: "guest"
+  RABBITMQ_PASS: "guest"
+  EXCHANGE: "lidar.pipeline"
+  ROUTING_KEY_FUSION: "fusion.events"
+  ROUTING_KEY_ENGINE: "engine.events"

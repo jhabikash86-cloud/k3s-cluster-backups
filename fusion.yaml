@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fusion-script
+  namespace: outsight-edge
+data:
+  fusion.py: |
+    import json, os, time
+    import pika
+
+    host = os.getenv("RABBITMQ_HOST", "rabbitmq.lidar-lab.svc.cluster.local")
+    creds = pika.PlainCredentials("guest", "guest")
+    IN_EX = "outsight.internal_osef"
+    OUT_EX = "outsight.results"
+
+    def zone_for(msg):
+        try:
+            x = float(msg.get("x", 0))
+        except (TypeError, ValueError):
+            x = 0.0
+        return "t1_taxistand" if x < 0 else "t1_departure"
+
+    while True:
+        try:
+            conn = pika.BlockingConnection(pika.ConnectionParameters(host=host, credentials=creds))
+            ch = conn.channel()
+            ch.exchange_declare(exchange=IN_EX, exchange_type="topic", durable=True)
+            ch.exchange_declare(exchange=OUT_EX, exchange_type="topic", durable=True)
+            ch.queue_declare(queue="fusion.osef", durable=True)
+            ch.queue_bind(queue="fusion.osef", exchange=IN_EX, routing_key="edge.*")
+            print("Fusion consuming outsight.internal_osef edge.*", flush=True)
+
+            def handle(ch_, method, properties, body):
+                try:
+                    raw = json.loads(body)
+                    zone = zone_for(raw)
+                    out = {
+                        "zone": zone,
+                        "merged_object_count": 1,
+                        "timestamp": time.time(),
+                        "object_id": raw.get("object_id"),
+                        "sensor_id": raw.get("sensor_id"),
+                    }
+                    ch_.basic_publish(
+                        exchange=OUT_EX,
+                        routing_key=f"touchpoint.{zone}",
+                        body=json.dumps(out),
+                    )
+                    print(f"{raw.get('sensor_id')} {out['object_id']} -> {OUT_EX} touchpoint.{zone}", flush=True)
+                except Exception as err:
+                    print(f"skip: {err}", flush=True)
+                finally:
+                    ch_.basic_ack(delivery_tag=method.delivery_tag)
+
+            ch.basic_qos(prefetch_count=10)
+            ch.basic_consume(queue="fusion.osef", on_message_callback=handle)
+            ch.start_consuming()
+        except Exception as e:
+            print(f"Error: {e}. Retrying in 5s...", flush=True)
+            time.sleep(5)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fusion
+  namespace: outsight-edge
+  labels:
+    app: fusion
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fusion
+  template:
+    metadata:
+      labels:
+        app: fusion
+    spec:
+      nodeSelector:
+        workload: edge
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: fusion
+          image: python:3.11-slim
+          command: ["sh","-c","pip install --no-cache-dir pika && python -u /scripts/fusion.py"]
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq.lidar-lab.svc.cluster.local
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: 200m, memory: 256Mi }
+          volumeMounts:
+            - { name: script, mountPath: /scripts }
+      volumes:
+        - name: script
+          configMap:
+            name: fusion-script

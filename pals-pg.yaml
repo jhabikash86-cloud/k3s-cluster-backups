@@ -1,0 +1,15 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: pals-pg
+  namespace: outsight-database
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  enableSuperuserAccess: true
+  storage:
+    size: 5Gi
+    storageClass: local-path
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker-aws

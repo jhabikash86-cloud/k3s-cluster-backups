@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kpi-api
+  namespace: outsight-database
+spec:
+  rules:
+    - host: kpi.pals.lab
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kpi-api
+                port:
+                  number: 8080

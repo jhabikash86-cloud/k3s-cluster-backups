@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fusion
+  namespace: outsight-edge
+  labels:
+    app: fusion
+    component: fusion
+    pipeline: lidar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fusion
+  template:
+    metadata:
+      labels:
+        app: fusion
+        component: fusion
+    spec:
+      nodeSelector:
+        workload: edge
+      containers:
+      - name: fusion
+        image: nginx:alpine          # placeholder for now
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fusion
+  namespace: outsight-edge
+spec:
+  selector:
+    app: fusion
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-engine
+  namespace: outsight-edge
+  labels:
+    app: event-engine
+    component: event-engine
+    pipeline: lidar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-engine
+  template:
+    metadata:
+      labels:
+        app: event-engine
+        component: event-engine
+    spec:
+      nodeSelector:
+        workload: edge
+      containers:
+      - name: event-engine
+        image: nginx:alpine          # placeholder for now
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-engine
+  namespace: outsight-edge
+spec:
+  selector:
+    app: event-engine
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http

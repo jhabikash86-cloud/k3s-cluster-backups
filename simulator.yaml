@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lidar-simulator-script
+  namespace: outsight-edge
+data:
+  sim.py: |
+    import os, json, time, random
+    from datetime import datetime
+    import pika
+
+    host = os.getenv("RABBITMQ_HOST", "rabbitmq.lidar-lab.svc.cluster.local")
+    sensor_id = os.getenv("SENSOR_ID", "lidar-01")
+    creds = pika.PlainCredentials("guest", "guest")
+    EXCHANGE = "outsight.internal_osef"
+
+    while True:
+        try:
+            conn = pika.BlockingConnection(pika.ConnectionParameters(host=host, credentials=creds))
+            ch = conn.channel()
+            ch.exchange_declare(exchange=EXCHANGE, exchange_type="topic", durable=True)
+            print(f"{sensor_id} publishing to {EXCHANGE}", flush=True)
+            while True:
+                msg = {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "sensor_id": sensor_id,
+                    "object_id": f"{sensor_id}-obj-{random.randint(1000,9999)}",
+                    "x": round(random.uniform(-10, 10), 2),
+                    "y": round(random.uniform(-10, 10), 2),
+                    "z": round(random.uniform(0, 2), 2),
+                    "class": random.choice(["person", "luggage", "staff"]),
+                }
+                ch.basic_publish(
+                    exchange=EXCHANGE,
+                    routing_key=f"edge.{sensor_id}",
+                    body=json.dumps(msg),
+                )
+                print(f"Sent {msg['object_id']} rk=edge.{sensor_id}", flush=True)
+                time.sleep(3)
+        except Exception as e:
+            print(f"Error: {e}. Retrying in 5s...", flush=True)
+            time.sleep(5)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lidar-simulator
+  namespace: outsight-edge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lidar-simulator
+      sensor: lidar-01
+  template:
+    metadata:
+      labels:
+        app: lidar-simulator
+        sensor: lidar-01
+    spec:
+      nodeSelector:
+        workload: edge
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: simulator
+          image: python:3.11-slim
+          command: ["sh","-c","pip install --no-cache-dir pika && python -u /scripts/sim.py"]
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq.lidar-lab.svc.cluster.local
+            - name: SENSOR_ID
+              value: lidar-01
+          resources:
+            requests: { cpu: 30m, memory: 64Mi }
+            limits:   { cpu: 100m, memory: 128Mi }
+          volumeMounts:
+            - { name: script, mountPath: /scripts }
+      volumes:
+        - name: script
+          configMap:
+            name: lidar-simulator-script
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lidar-simulator-02
+  namespace: outsight-edge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lidar-simulator
+      sensor: lidar-02
+  template:
+    metadata:
+      labels:
+        app: lidar-simulator
+        sensor: lidar-02
+    spec:
+      nodeSelector:
+        workload: edge
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: simulator
+          image: python:3.11-slim
+          command: ["sh","-c","pip install --no-cache-dir pika && python -u /scripts/sim.py"]
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq.lidar-lab.svc.cluster.local
+            - name: SENSOR_ID
+              value: lidar-02
+          resources:
+            requests: { cpu: 30m, memory: 64Mi }
+            limits:   { cpu: 100m, memory: 128Mi }
+          volumeMounts:
+            - { name: script, mountPath: /scripts }
+      volumes:
+        - name: script
+          configMap:
+            name: lidar-simulator-script
