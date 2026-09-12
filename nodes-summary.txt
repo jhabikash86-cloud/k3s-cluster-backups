@@ -1,0 +1,5 @@
+NAME                 STATUS     ROLES           AGE   VERSION        INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION              CONTAINER-RUNTIME
+k3s-master           Ready      control-plane   41d   v1.36.2+k3s1   192.168.18.113   <none>        Ubuntu 24.04.4 LTS   6.8.0-138-generic (amd64)   containerd://2.3.2-k3s2
+k3s-worker-aws-ec2   NotReady   <none>          13d   v1.36.4+k3s1   100.84.255.44    <none>        Ubuntu 24.04.4 LTS   7.0.0-1011-aws (amd64)      containerd://2.3.4-k3s1.36
+k8s-worker-aws       Ready      <none>          41d   v1.36.2+k3s1   192.168.18.115   <none>        Ubuntu 24.04.4 LTS   6.8.0-138-generic (amd64)   containerd://2.3.2-k3s2
+k8s-worker-onprem    Ready      <none>          41d   v1.36.2+k3s1   192.168.18.114   <none>        Ubuntu 24.04.4 LTS   6.8.0-138-generic (amd64)   containerd://2.3.2-k3s2

@@ -1,0 +1,17 @@
+NAMESPACE              NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP                                    PORT(S)                          AGE
+default                kubernetes                             ClusterIP      10.43.0.1       <none>                                         443/TCP                          41d
+default                mongo-service                          ClusterIP      10.43.153.80    <none>                                         27017/TCP                        22d
+default                reverse-proxy                          ClusterIP      10.43.138.36    <none>                                         80/TCP                           25d
+default                webapp                                 NodePort       10.43.211.171   <none>                                         8081:30100/TCP                   22d
+kube-system            kube-dns                               ClusterIP      10.43.0.10      <none>                                         53/UDP,53/TCP,9153/TCP           41d
+kube-system            metrics-server                         ClusterIP      10.43.143.98    <none>                                         443/TCP                          41d
+kube-system            traefik                                LoadBalancer   10.43.153.175   192.168.18.113,192.168.18.114,192.168.18.115   80:32003/TCP,443:30169/TCP       41d
+kubernetes-dashboard   kubernetes-dashboard-api               ClusterIP      10.43.139.189   <none>                                         8000/TCP                         15h
+kubernetes-dashboard   kubernetes-dashboard-auth              ClusterIP      10.43.14.157    <none>                                         8000/TCP                         15h
+kubernetes-dashboard   kubernetes-dashboard-kong-proxy        ClusterIP      10.43.59.240    <none>                                         443/TCP                          15h
+kubernetes-dashboard   kubernetes-dashboard-metrics-scraper   ClusterIP      10.43.187.213   <none>                                         8000/TCP                         15h
+kubernetes-dashboard   kubernetes-dashboard-web               ClusterIP      10.43.61.104    <none>                                         8000/TCP                         15h
+lidar-lab              rabbitmq                               NodePort       10.43.180.191   <none>                                         5672:30372/TCP,15672:30672/TCP   14d
+outsight-database      kpi-api                                ClusterIP      10.43.228.29    <none>                                         8080/TCP                         3d21h
+outsight-database      postgres                               NodePort       10.43.69.215    <none>                                         5432:30432/TCP                   38d
+outsight-edge          detector                               ClusterIP      10.43.209.139   <none>                                         80/TCP                           38d
